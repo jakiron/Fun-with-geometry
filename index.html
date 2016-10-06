@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="stylesheet" type="text/css" href="main.css" />
+		<title>Fun with geometry</title>
+
+          <script type="text/javascript">
+
+          var gamePlay = (function(){
+               var svgns = "http://www.w3.org/2000/svg";
+               var pathCount = 0;
+               var functions = {
+                    "circle": makeCircle,
+                    "ellipse": makeEllipse,
+                    "triangle": makeTriangle,
+                    "square": makeSquare,
+               }
+               var MESSAGES = {
+                    "endGame": "Uhho! Looks like you touched one of the elements",
+                    "bestScore": "Your best score is: ",
+               }
+
+               var startTime = null;
+
+               /**
+                * [clearContents Clears the contents of the target element]
+                * @param  {[SVG|DOM element]} targetElement [target element whose contents have to be cleared]
+                */
+               function clearContents(targetElement){
+                    while(targetElement.firstChild){
+                         targetElement.removeChild(targetElement.firstChild);
+                    }
+               }
+
+               /**
+                * [stopGame Stops the game and resets]
+                */
+               function stopGame(){
+                    var scorebox = $("scorebox");
+                    var endTime = new Date().getTime();
+
+                    // clear the svg box
+                    var canvas = $("canvas");
+                    clearContents(canvas);
+
+                    // clear the scorebox
+                    clearContents(canvas);
+
+                    // add the score
+                    scorebox.appendChild(document.createTextNode(MESSAGES["endGame"]));
+                    scorebox.appendChild(document.createElement("br"));
+                    scorebox.appendChild(document.createTextNode(MESSAGES["bestScore"]+((endTime-startTime)/1000)+" seconds"));
+
+                    setTimeout(function(){
+                         clearContents(scorebox);
+                    }, 4000);
+               }
+
+               /**
+                * [create Based on the selection in the select box the corresponding function for creating svg is called]
+                */
+               function create(){
+                    var geometry = document.getElementById("geometry").value;
+                    functions[geometry]();
+                    if(startTime === null){
+                         startTime = new Date().getTime();
+                    }
+               }
+
+               /**
+                * [makeCircle Creates a circle, and animates it using animateMotion]
+                */
+               function makeCircle() {
+                    var cir = document.createElementNS(svgns, "circle");
+                    cir.setAttribute("r", randomize(5,50));
+                    cir.setAttribute("cx", "0px");
+                    cir.setAttribute("cy", "0px" );
+                    cir.setAttribute("fill", "rgb("+randomize(0,255)+","+randomize(0,255)+","+randomize(0,255)+")");
+                    cir.setAttribute("opacity", randomize(1,10)/10);
+
+                    $("canvas").appendChild(cir);
+                    cir.addEventListener('mouseenter', stopGame, false);
+                    animateMotion(cir);
+               }
+
+               /**
+                * [makeSquare Creates a square, and animates it using Web animation API]
+                */
+               function makeSquare() {
+                    var square = document.createElementNS(svgns, "rect");
+                    square.setAttribute( "x", randomize(0, getSVGContainerWidth()) );
+                    square.setAttribute( "y", randomize(0, 500) );
+                    square.setAttribute( "width", 40 );
+                    square.setAttribute( "height", 40 );
+                    square.setAttribute( "fill",  "rgb("+randomize(0,255)+","+randomize(0,255)+","+randomize(0,255)+")");
+                    square.setAttribute( "opacity", randomize(1,10)/10);
+
+                    $("canvas").appendChild(square);
+                    square.addEventListener('mouseenter', stopGame, false);
+                    animateWebAPI(square);
+               }
+
+               /**
+                * [makeEllipse Creates an ellipse, and animates it using animateMotion]
+                */
+               function makeEllipse(){
+                    var ellipse = document.createElementNS(svgns, "ellipse");
+                    ellipse.setAttribute( "cx", "0px");
+                    ellipse.setAttribute( "cy", "0px" );
+                    ellipse.setAttribute( "rx", randomize(5,50) );
+                    ellipse.setAttribute( "ry", randomize(5,40) );
+                    ellipse.setAttribute( "fill",  "rgb("+randomize(0,255)+","+randomize(0,255)+","+randomize(0,255)+")");
+                    ellipse.setAttribute( "opacity", randomize(1,10)/10);
+
+                    $("canvas").appendChild(ellipse);
+                    ellipse.addEventListener('mouseenter', stopGame, false);
+                    animateMotion(ellipse);
+               }
+
+               /**
+                * [makeTriangle Creates a triangle, and animates it using Web animation API]
+                */
+               function makeTriangle(){
+                    var triangle = document.createElementNS(svgns, "polygon");
+                    var startingPointX = randomize(0, getSVGContainerWidth()),
+                        startingPointY = randomize(0, 500);
+
+                    var trianglePoints = startingPointX+","+startingPointY+" "+
+                                         (startingPointX-randomize(50,100))+","+(startingPointY-randomize(50,100))+" "+
+                                         (startingPointX+randomize(500,100))+","+(startingPointY+randomize(50,100));
+                    triangle.setAttribute( "points", trianglePoints);
+                    triangle.setAttribute( "fill",  "rgb("+randomize(0,255)+","+randomize(0,255)+","+randomize(0,255)+")");
+                    triangle.setAttribute( "opacity", randomize(1,10)/10);
+
+                    $("canvas").appendChild(triangle);
+                    triangle.addEventListener('mouseenter', stopGame, false);
+                    animateWebAPI(triangle);
+               }
+
+               /**
+                * [animateMotion Animates the SVG element using animateMotion]
+                * @param  {[SVG element]} targetElement [Target element to be animated]
+                */
+               function animateMotion(targetElement){
+                    var aniMotion = "<animateMotion begin='0s' dur='8s' repeatCount='indefinite'>"+
+                                        "<mpath xlink:href='#path"+getPath()+"' />"+
+                                   "</animateMotion>";
+                    targetElement.innerHTML = aniMotion;
+               }
+
+               /**
+                * [animateWebAPI Animates the SVG element using Web animation API]
+                * @param  {[SVG element]} targetElement [Target element to be animated]
+                */
+               function animateWebAPI(targetElement){
+                    targetElement.animate([
+                         {transform: "translate("+randomize(0, getSVGContainerWidth()/10)+"px,"+randomize(0, getSVGContainerWidth()/10)+"px)"},
+                         {transform: "translate("+randomize(0, getSVGContainerWidth()/2)+"px,"+randomize(0, getSVGContainerWidth()/2)+"px)"},
+                         {transform: "translate("+randomize(0, getSVGContainerWidth())+"px,"+randomize(0, getSVGContainerWidth())+"px)"},
+                         {transform: "translate("+randomize(0, getSVGContainerWidth()/2)+"px,"+randomize(0, getSVGContainerWidth()/2)+"px)"},
+                         {transform: "translate("+randomize(0, getSVGContainerWidth()/20)+"px,"+randomize(0, getSVGContainerWidth()/10)+"px)"},
+                         {transform: "translate("+randomize(0, getSVGContainerWidth()/5)+"px,"+randomize(0, getSVGContainerWidth()/15)+"px)"},
+                         ],{duration: 4000, iterations: Infinity, easing: "linear"});
+               }
+
+               /**
+                * [getPath Creates a path svg element dynamically, and returns it]
+                * @return {[path SVG element]} [path SVG element created using random settings]
+                */
+               function getPath(){
+                    var pathPoints = "M"+randomize(0, getSVGContainerWidth()/5)+","+randomize(0, getSVGContainerWidth()/5)+" "+
+                                     "C"+randomize(0, getSVGContainerWidth())+","+randomize(0, getSVGContainerWidth())+" "+
+                                     randomize(0, getSVGContainerWidth()/2)+","+randomize(0, getSVGContainerWidth())+" "+
+                                     randomize(0, getSVGContainerWidth())+","+randomize(0, getSVGContainerWidth()/2);
+
+                    var path = document.createElementNS(svgns, "path");
+                    path.setAttribute("id", "path"+pathCount);
+                    path.setAttribute("d", pathPoints)
+                    path.setAttribute("fill","none");
+
+                    $("canvas").appendChild(path);
+
+                    ++pathCount;
+                    return pathCount-1;
+               }
+
+               /**
+                * [getSVGContainerWidth Get the SVG container width]
+                * @return {[int]} [Width of the SVG container]
+                */
+               function getSVGContainerWidth(){
+                    return parseInt(getComputedStyle(document.getElementsByTagName("svg")[0]).width);
+               }
+
+               /**
+                * [randomize Generates a random number between min and max]
+                * @param  {[int]} min [minimum number to start with]
+                * @param  {[int]} max [maximum number to end with]
+                * @return {[int]}     [generated random number]
+                */
+               function randomize( min, max ){
+                    max -= min;
+                    return parseInt(Math.random() * max + min);
+               }
+
+               /** [$ Returns the DOM element] */
+               function $( id ){
+                    return document.getElementById( id );
+               }
+
+               /**
+                * Functions to create DOM elements
+                */
+
+               /**
+                * [createSelectElementWithOptions creates the menu select box]
+                * @return {[select]} [create select element]
+                */
+               function createSelectElementWithOptions(){
+                    var select = document.createElement("select");
+                    select.setAttribute("id", "geometry");
+
+                    var optionCircle = document.createElement("option");
+                    optionCircle.setAttribute("value", "circle");
+                    optionCircle.appendChild(document.createTextNode("Circle"));
+                    select.appendChild(optionCircle);
+
+
+                    var optionEllipse = document.createElement("option");
+                    optionEllipse.setAttribute("value", "ellipse");
+                    optionEllipse.appendChild(document.createTextNode("Ellipse"));
+                    select.appendChild(optionEllipse);
+
+
+                    var optionTriangle = document.createElement("option");
+                    optionTriangle.setAttribute("value", "triangle");
+                    optionTriangle.appendChild(document.createTextNode("Triangle"));
+                    select.appendChild(optionTriangle);
+
+
+                    var optionSquare = document.createElement("option");
+                    optionSquare.setAttribute("value", "square");
+                    optionSquare.appendChild(document.createTextNode("Square"));
+                    select.appendChild(optionSquare);
+
+                    return select;
+               }
+
+               /**
+                * [createMenu Creates the menu box]
+                */
+               function createMenu(){
+                    var divInner = document.createElement("div");
+                    divInner.setAttribute("class", "center");
+                    divInner.setAttribute("id", "menu");
+                    divInner.appendChild(createSelectElementWithOptions());
+
+                    var inputButton = document.createElement("input");
+                    inputButton.setAttribute("type", "button");
+                    inputButton.setAttribute("value", "create");
+                    inputButton.addEventListener('click', create, false);
+                    divInner.appendChild(inputButton);
+
+                    var divOuter = document.createElement("div");
+                    divOuter.appendChild(divInner);
+
+                    document.body.appendChild(divOuter);
+               }
+
+               /**
+                * [createScoreBox Creates score box]
+                */
+               function createScoreBox(){
+                    var divInner = document.createElement("div");
+                    divInner.setAttribute("id", "scorebox");
+                    divInner.setAttribute("class", "center");
+
+                    divInner.appendChild(document.createTextNode("Gameplay: Avoid touching the created elements"));
+
+                    var divOuter = document.createElement("div");
+                    divOuter.appendChild(divInner);
+
+                    document.body.appendChild(divOuter);
+
+               }
+
+               /**
+                * [createContent Creates the content box and svg box]
+                */
+               function createContent(){
+                    var svg = document.createElementNS(svgns, "svg");
+                    svg.setAttribute("class", "maincontent");
+
+                    var g = document.createElementNS(svgns, "g");
+                    g.setAttribute("id", "canvas");
+
+                    svg.appendChild(g);
+
+                    var divOuter = document.createElement("div");
+                    divOuter.appendChild(svg);
+
+                    document.body.appendChild(divOuter);
+
+               }
+
+               /**
+                * [init Initializes the application, creates all the elements dynamically]
+                */
+               function init(){
+                   createMenu();
+                   createScoreBox();
+                   createContent();
+               }
+
+               return {
+                    "init": init,
+               };
+          })();
+
+          window.onload= gamePlay.init;
+          </script>
+	</head>
+	<body>
+
+	</body>
+</html>
